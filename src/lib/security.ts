@@ -5,28 +5,70 @@ export function isValidUUID(s: string): boolean {
   return UUID_RE.test(s)
 }
 
-const ipRequests = new Map<string, { count: number; resetAt: number }>()
+let ratelimit: {
+  create: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
+  submit: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
+  lookup: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
+} | null = null
 
-export function checkRateLimit(
-  ip: string,
-  maxRequests: number,
-  windowMs: number
-): { ok: boolean; retryAfter?: number } {
-  const now = Date.now()
-  const entry = ipRequests.get(ip)
-
-  if (!entry || now > entry.resetAt) {
-    ipRequests.set(ip, { count: 1, resetAt: now + windowMs })
-    return { ok: true }
+async function getRatelimit() {
+  if (ratelimit) return ratelimit
+  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    console.warn("[security] Vercel KV not configured — rate limiting disabled")
+    return null
   }
 
-  if (entry.count >= maxRequests) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
-    return { ok: false, retryAfter }
+  const { Ratelimit } = await import("@upstash/ratelimit")
+  const { Redis } = await import("@upstash/redis")
+
+  const redis = new Redis({
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
+  })
+
+  const create = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "60 s"),
+    prefix: "rl:create",
+  })
+
+  const submit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "60 s"),
+    prefix: "rl:submit",
+  })
+
+  const lookup = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(30, "60 s"),
+    prefix: "rl:lookup",
+  })
+
+  ratelimit = {
+    create: async (ip: string) => create.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+    submit: async (ip: string) => submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+    lookup: async (ip: string) => lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
   }
 
-  entry.count++
-  return { ok: true }
+  return ratelimit
+}
+
+export async function checkCreateLimit(ip: string) {
+  const rl = await getRatelimit()
+  if (!rl) return { ok: true }
+  return rl.create(ip)
+}
+
+export async function checkSubmitLimit(ip: string) {
+  const rl = await getRatelimit()
+  if (!rl) return { ok: true }
+  return rl.submit(ip)
+}
+
+export async function checkLookupLimit(ip: string) {
+  const rl = await getRatelimit()
+  if (!rl) return { ok: true }
+  return rl.lookup(ip)
 }
 
 export function sanitizeJsonBody(body: unknown, maxBytes: number): boolean {

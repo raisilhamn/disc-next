@@ -1,20 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-import { isValidUUID, checkRateLimit } from "@/lib/security"
+import { isValidUUID } from "@/lib/security"
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown"
-  const rl = checkRateLimit(`questions:${ip}`, 30, 60000)
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    )
-  }
-
   const { id } = await params
 
   if (!isValidUUID(id)) {

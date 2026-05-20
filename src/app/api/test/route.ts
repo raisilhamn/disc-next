@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-import { checkRateLimit } from "@/lib/security"
+import { checkCreateLimit } from "@/lib/security"
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for") || "unknown"
-  const rl = checkRateLimit(`create:${ip}`, 10, 60000)
+  const rl = await checkCreateLimit(ip)
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Too many requests" },

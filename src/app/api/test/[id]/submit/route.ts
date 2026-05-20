@@ -5,7 +5,7 @@ import {
   isValidUUID,
   isValidQuestionNumber,
   isValidOptionId,
-  checkRateLimit,
+  checkSubmitLimit,
   sanitizeJsonBody,
 } from "@/lib/security"
 
@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const ip = request.headers.get("x-forwarded-for") || "unknown"
-  const rl = checkRateLimit(`submit:${ip}`, 5, 60000)
+  const rl = await checkSubmitLimit(ip)
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Too many requests" },
