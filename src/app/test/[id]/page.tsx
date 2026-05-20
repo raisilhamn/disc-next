@@ -7,11 +7,13 @@ type Option = { id: number; text: string }
 type Question = { id: number; number: number; statement: string; options: Option[] }
 type Answers = Record<number, { most: number | null; least: number | null }>
 
-function saveToStorage(id: string, answers: Answers) {
-  try { sessionStorage.setItem(`disc-${id}`, JSON.stringify(answers)) } catch {}
+type StorageData = { answers: Answers; idx: number }
+
+function saveToStorage(id: string, answers: Answers, idx: number) {
+  try { sessionStorage.setItem(`disc-${id}`, JSON.stringify({ answers, idx })) } catch {}
 }
 
-function loadFromStorage(id: string): Answers | null {
+function loadFromStorage(id: string): StorageData | null {
   try {
     const raw = sessionStorage.getItem(`disc-${id}`)
     return raw ? JSON.parse(raw) : null
@@ -40,14 +42,8 @@ export default function TestPage() {
 
         const saved = loadFromStorage(id)
         if (saved) {
-          setAnswers(saved)
-          const answered = Object.values(saved).filter((a) => a.most !== null && a.least !== null).length
-          if (answered > 0 && answered < 24) {
-            const last = d.questions.findIndex(
-              (q: Question) => !saved[q.number]?.most || !saved[q.number]?.least
-            )
-            if (last > 0) setCurrentIdx(last)
-          }
+          setAnswers(saved.answers)
+          setCurrentIdx(saved.idx)
           return
         }
 
@@ -59,8 +55,8 @@ export default function TestPage() {
 
   useEffect(() => {
     if (!id || Object.keys(answers).length === 0) return
-    saveToStorage(id, answers)
-  }, [id, answers])
+    saveToStorage(id, answers, currentIdx)
+  }, [id, answers, currentIdx])
 
   const q = questions[currentIdx]
   const a = q ? answers[q.number] : null
