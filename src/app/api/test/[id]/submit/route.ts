@@ -8,6 +8,7 @@ import {
   checkSubmitLimit,
   sanitizeJsonBody,
 } from "@/lib/security"
+import { getRedis } from "@/lib/redis"
 
 export async function POST(
   request: Request,
@@ -159,6 +160,11 @@ export async function POST(
       description: profile.description,
     },
   })
+
+  const redis = getRedis()
+  if (redis) {
+    await redis.incr("stats:total")
+  }
 
   return NextResponse.json({
     testId: id,
