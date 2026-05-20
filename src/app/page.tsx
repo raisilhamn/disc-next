@@ -8,7 +8,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [uuid, setUuid] = useState("")
   const [mounted, setMounted] = useState(false)
+  const [totalTests, setTotalTests] = useState<number | null>(null)
   useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    fetch("/api/stats").then((r) => r.json()).then((d) => setTotalTests(d.total)).catch(() => {})
+  }, [])
 
   async function startTest() {
     setLoading(true)
@@ -101,6 +105,14 @@ export default function Home() {
         </div>
 
       </div>
+
+      {totalTests !== null && (
+        <div className="fixed bottom-4 right-4 animate-fade-in rounded-xl border border-sage-200 bg-white px-4 py-2.5 shadow-lg">
+          <span className="text-xs text-sage-500">
+            <strong className="text-sage-700">{totalTests}</strong> tes tersubmit
+          </span>
+        </div>
+      )}
     </div>
   )
 }
