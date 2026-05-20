@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Test {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers  Answer[]
+  result   Result?
+}
+
+model Question {
+  id        Int    @id @default(autoincrement())
+  number    Int    @unique
+  statement String
+
+  options QuestionOption[]
+}
+
+model QuestionOption {
+  id         Int    @id @default(autoincrement())
+  questionId Int
+  text       String
+  keyM       String
+  keyL       String
+
+  question Question @relation(fields: [questionId], references: [id])
+  answersM Answer[] @relation("mostAnswer")
+  answersL Answer[] @relation("leastAnswer")
+}
+
+model Answer {
+  id             Int    @id @default(autoincrement())
+  testId         String
+  questionNumber Int
+  optionIdM      Int
+  optionIdL      Int
+
+  test     Test           @relation(fields: [testId], references: [id])
+  optionM  QuestionOption @relation("mostAnswer", fields: [optionIdM], references: [id])
+  optionL  QuestionOption @relation("leastAnswer", fields: [optionIdL], references: [id])
+
+  @@unique([testId, questionNumber])
+}
+
+model Result {
+  id     String @id @default(uuid())
+  testId String @unique
+
+  mD Int
+  mI Int
+  mS Int
+  mC Int
+  lD Int
+  lI Int
+  lS Int
+  lC Int
+
+  diffD Int
+  diffI Int
+  diffS Int
+  diffC Int
+
+  profile     String
+  description String
+
+  test Test @relation(fields: [testId], references: [id])
+}
