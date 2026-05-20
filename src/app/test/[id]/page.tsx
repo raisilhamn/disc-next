@@ -1,17 +1,33 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 type Option = { id: number; text: string }
 type Question = { id: number; number: number; statement: string; options: Option[] }
+type Answers = Record<number, { most: number | null; least: number | null }>
+
+function saveToStorage(id: string, answers: Answers) {
+  try { sessionStorage.setItem(`disc-${id}`, JSON.stringify(answers)) } catch {}
+}
+
+function loadFromStorage(id: string): Answers | null {
+  try {
+    const raw = sessionStorage.getItem(`disc-${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function clearStorage(id: string) {
+  try { sessionStorage.removeItem(`disc-${id}`) } catch {}
+}
 
 export default function TestPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, { most: number | null; least: number | null }>>({})
+  const [answers, setAnswers] = useState<Answers>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
 
@@ -21,11 +37,30 @@ export default function TestPage() {
       .then((d) => {
         if (d.error) { setError(d.error); return }
         setQuestions(d.questions)
-        const initial: Record<number, { most: number | null; least: number | null }> = {}
+
+        const saved = loadFromStorage(id)
+        if (saved) {
+          setAnswers(saved)
+          const answered = Object.values(saved).filter((a) => a.most !== null && a.least !== null).length
+          if (answered > 0 && answered < 24) {
+            const last = d.questions.findIndex(
+              (q: Question) => !saved[q.number]?.most || !saved[q.number]?.least
+            )
+            if (last > 0) setCurrentIdx(last)
+          }
+          return
+        }
+
+        const initial: Answers = {}
         d.questions.forEach((q: Question) => { initial[q.number] = { most: null, least: null } })
         setAnswers(initial)
       })
   }, [id])
+
+  useEffect(() => {
+    if (!id || Object.keys(answers).length === 0) return
+    saveToStorage(id, answers)
+  }, [id, answers])
 
   const q = questions[currentIdx]
   const a = q ? answers[q.number] : null
@@ -33,23 +68,23 @@ export default function TestPage() {
   const canNext = a?.most !== null && a?.least !== null
   const answered = Object.values(answers).filter((x) => x.most !== null && x.least !== null).length
 
-  function selectP(optionId: number) {
+  const selectP = useCallback((optionId: number) => {
     if (!q) return
     setAnswers((prev) => {
       const curr = prev[q.number]
       if (curr.least === optionId) return prev
       return { ...prev, [q.number]: { ...curr, most: optionId } }
     })
-  }
+  }, [q])
 
-  function selectK(optionId: number) {
+  const selectK = useCallback((optionId: number) => {
     if (!q) return
     setAnswers((prev) => {
       const curr = prev[q.number]
       if (curr.most === optionId) return prev
       return { ...prev, [q.number]: { ...curr, least: optionId } }
     })
-  }
+  }, [q])
 
   function next() {
     if (canNext && !isLast) {
@@ -72,6 +107,7 @@ export default function TestPage() {
     })
     const data = await res.json()
     if (res.ok) {
+      clearStorage(id)
       router.push(`/result/${id}`)
     } else {
       setError(data.error || "Terjadi kesalahan")
