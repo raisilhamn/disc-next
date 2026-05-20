@@ -13,18 +13,19 @@ let ratelimit: {
 
 async function getRatelimit() {
   if (ratelimit) return ratelimit
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    console.warn("[security] Vercel KV not configured — rate limiting disabled")
+
+  const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
+  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (!redisUrl || !redisToken) {
+    console.warn("[security] Redis (Upstash/KV) not configured — rate limiting disabled")
     return null
   }
 
   const { Ratelimit } = await import("@upstash/ratelimit")
   const { Redis } = await import("@upstash/redis")
 
-  const redis = new Redis({
-    url: process.env.KV_REST_API_URL,
-    token: process.env.KV_REST_API_TOKEN,
-  })
+  const redis = new Redis({ url: redisUrl, token: redisToken })
 
   const create = new Ratelimit({
     redis,
