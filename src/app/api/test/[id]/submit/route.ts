@@ -163,7 +163,7 @@ export async function POST(
 
   const redis = getRedis()
   if (redis) {
-    await redis.incr("stats:total")
+    try { await redis.incr("stats:total") } catch {}
   }
 
   return NextResponse.json({

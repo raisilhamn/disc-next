@@ -46,30 +46,41 @@ async function getRatelimit() {
   })
 
   ratelimit = {
-    create: async (ip: string) => create.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
-    submit: async (ip: string) => submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
-    lookup: async (ip: string) => lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+    create: async (ip: string) =>
+      create.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+    submit: async (ip: string) =>
+      submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+    lookup: async (ip: string) =>
+      lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
   }
 
   return ratelimit
 }
 
+async function safeCheck(fn: () => Promise<{ ok: boolean; retryAfter?: number }>) {
+  try {
+    return await fn()
+  } catch {
+    return { ok: true }
+  }
+}
+
 export async function checkCreateLimit(ip: string) {
   const rl = await getRatelimit()
   if (!rl) return { ok: true }
-  return rl.create(ip)
+  return safeCheck(() => rl.create(ip))
 }
 
 export async function checkSubmitLimit(ip: string) {
   const rl = await getRatelimit()
   if (!rl) return { ok: true }
-  return rl.submit(ip)
+  return safeCheck(() => rl.submit(ip))
 }
 
 export async function checkLookupLimit(ip: string) {
   const rl = await getRatelimit()
   if (!rl) return { ok: true }
-  return rl.lookup(ip)
+  return safeCheck(() => rl.lookup(ip))
 }
 
 export function sanitizeJsonBody(body: unknown, maxBytes: number): boolean {
