@@ -114,10 +114,10 @@ export default function TestPage() {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white/80 p-8 text-center shadow-lg backdrop-blur">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl">⚠</div>
-          <p className="text-lg font-medium text-red-600">{error}</p>
-          <button onClick={() => router.push("/")} className="mt-4 text-blue-600 underline underline-offset-2 hover:text-blue-800">Kembali ke Beranda</button>
+        <div className="w-full max-w-md rounded-lg border border-red-200 bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl">!</div>
+          <p className="text-lg font-medium text-destructive">{error}</p>
+          <button onClick={() => router.push("/")} className="mt-4 text-sm font-medium text-primary underline underline-offset-4 hover:text-zinc-700">Kembali ke Beranda</button>
         </div>
       </div>
     )
@@ -127,8 +127,8 @@ export default function TestPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-sage-500 border-t-transparent" />
-          <p className="text-sm text-sage-400">Memuat soal...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Memuat soal...</p>
         </div>
       </div>
     )
@@ -137,41 +137,41 @@ export default function TestPage() {
   return (
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-6">
       <div className="animate-slide-up">
-        <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-sage-600 to-sage-700 p-5 text-white shadow-lg">
+        <div className="mb-6 overflow-hidden rounded-lg bg-zinc-900 p-5 text-white shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-white/70">Tes DISC 24 Soal</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Tes DISC 24 Soal</div>
               <div className="mt-0.5 text-lg font-bold">Soal {currentIdx + 1} dari {questions.length}</div>
             </div>
             <div className="text-right">
               <div className="text-xl font-bold">{answered}</div>
-              <div className="text-xs text-white/70">Terjawab</div>
+              <div className="text-xs text-zinc-400">Terjawab</div>
             </div>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/20">
-            <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }} />
+            <div className="h-full rounded-full bg-ring transition-all duration-500" style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }} />
           </div>
         </div>
 
-        <div className="mb-4 flex items-center justify-between rounded-xl border border-sage-200 bg-white/70 px-5 py-3 shadow-sm backdrop-blur">
-          <span className="text-xs font-semibold uppercase tracking-wider text-sage-500">Pernyataan</span>
+        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-card px-5 py-3 shadow-sm">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pernyataan</span>
           <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
-            <span className="text-[#3b6ea5]">P (Paling)</span>
-            <span className="text-[#b15555]">K (Kurang)</span>
+            <span className="text-disc-d">P (Paling)</span>
+            <span className="text-disc-i">K (Kurang)</span>
           </div>
         </div>
 
-        <div className="animate-fade-in rounded-2xl border border-sage-200 bg-white p-5 shadow-md">
+        <div className="animate-fade-in rounded-lg border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sage-500 to-sage-700 text-sm font-bold text-white shadow">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-900 text-sm font-bold text-white shadow-sm">
               {q.number}
             </span>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-sage-400">Soal #{q.number}</div>
-              <div className="text-sm font-medium text-sage-600">Pilih P dan K</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Soal #{q.number}</div>
+              <div className="text-sm font-medium text-foreground">Pilih P dan K</div>
             </div>
             {a?.most !== null && a?.least !== null && (
-              <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700">✓</span>
+              <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700">&#10003;</span>
             )}
           </div>
 
@@ -185,15 +185,15 @@ export default function TestPage() {
               return (
                 <div
                   key={opt.id}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-all ${
+                  className={`flex items-center gap-3 rounded-md border px-4 py-3.5 transition-colors ${
                     isP
-                      ? "border-[#3b6ea5] bg-[#f0f5ff] shadow-sm"
+                      ? "border-disc-d bg-blue-50"
                       : isK
-                        ? "border-[#b15555] bg-[#fdf0f0] shadow-sm"
-                        : "border-sage-100 bg-sage-50/50 hover:border-sage-300 hover:bg-white hover:shadow-sm"
+                        ? "border-disc-i bg-red-50"
+                        : "border-border bg-muted/30 hover:border-ring/50 hover:bg-card"
                   }`}
                 >
-                  <span className="flex-1 text-sm leading-snug">{opt.text}</span>
+                  <span className="flex-1 text-sm leading-snug text-foreground">{opt.text}</span>
 
                   <div className="flex items-center gap-4">
                     <label className={`flex cursor-pointer items-center gap-1.5 ${pDisabled ? "cursor-not-allowed opacity-25" : ""}`}>
@@ -205,7 +205,7 @@ export default function TestPage() {
                         onChange={() => selectP(opt.id)}
                         disabled={pDisabled}
                       />
-                      <span className={`text-xs font-bold uppercase ${isP ? "text-[#3b6ea5]" : "text-sage-300"}`}>P</span>
+                      <span className={`text-xs font-bold uppercase ${isP ? "text-disc-d" : "text-muted-foreground"}`}>P</span>
                     </label>
 
                     <label className={`flex cursor-pointer items-center gap-1.5 ${kDisabled ? "cursor-not-allowed opacity-25" : ""}`}>
@@ -217,7 +217,7 @@ export default function TestPage() {
                         onChange={() => selectK(opt.id)}
                         disabled={kDisabled}
                       />
-                      <span className={`text-xs font-bold uppercase ${isK ? "text-[#b15555]" : "text-sage-300"}`}>K</span>
+                      <span className={`text-xs font-bold uppercase ${isK ? "text-disc-i" : "text-muted-foreground"}`}>K</span>
                     </label>
                   </div>
                 </div>
@@ -231,22 +231,22 @@ export default function TestPage() {
             <button
               onClick={next}
               disabled={!canNext}
-              className="rounded-xl bg-gradient-to-r from-sage-600 to-sage-700 px-8 py-3 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-sage-700 hover:to-sage-800 disabled:scale-100 disabled:opacity-30 disabled:shadow-none"
+              className="rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-30"
             >
-              Selanjutnya →
+              Selanjutnya &rarr;
             </button>
           ) : (
             <button
               onClick={submit}
               disabled={submitting}
-              className="rounded-xl bg-gradient-to-r from-sage-600 to-sage-700 px-8 py-3 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:from-sage-700 hover:to-sage-800 disabled:scale-100 disabled:opacity-30 disabled:shadow-none"
+              className="rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-30"
             >
               {submitting ? "Mengirim..." : "Lihat Hasil Tes"}
             </button>
           )}
         </div>
 
-        <div className="mt-4 text-center text-xs text-sage-400">
+        <div className="mt-4 text-center text-xs text-muted-foreground">
           {canNext
             ? isLast ? "Semua soal sudah dijawab." : "Klik Selanjutnya untuk lanjut"
             : "Pilih P (Paling) dan K (Kurang) untuk melanjutkan"}

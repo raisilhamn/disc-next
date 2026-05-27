@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -16,7 +17,7 @@ type ResultData = {
   jobs: { title: string; jobs: string[] }[]
 }
 
-const COLORS: Record<string, string> = { D: "#3b6ea5", I: "#b15555", S: "#5d8a5d", C: "#7b5ea7" }
+const COLORS: Record<string, string> = { D: "#3b82f6", I: "#ef4444", S: "#22c55e", C: "#a855f7" }
 const LABELS: Record<string, string> = { D: "Dominance", I: "Influence", S: "Steadiness", C: "Compliance" }
 const ORDER = ["D", "I", "S", "C"]
 
@@ -54,7 +55,6 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
   }
 
   const hasNegative = values.some((v) => v < 0)
-  const yZero = midline ? yBase : yBase
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 200 }}>
@@ -63,23 +63,23 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
         y1={yPos(0)}
         x2={W - PAD.right}
         y2={yPos(0)}
-        stroke={midline ? "#cbd5cb" : "#d1d5db"}
+        stroke={midline ? "#d4d4d8" : "#e4e4e7"}
         strokeWidth={midline ? 1.5 : 1}
         strokeDasharray={midline ? "4,3" : "none"}
       />
 
       {midline && hasNegative && [-maxVal, maxVal].map((v) => (
-        <text key={v} x={PAD.left - 6} y={yPos(v) + 4} textAnchor="end" className="text-[10px]" fill="#9ca3af">
+        <text key={v} x={PAD.left - 6} y={yPos(v) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
           {v > 0 ? `+${v}` : v}
         </text>
       ))}
 
-      <text x={PAD.left - 6} y={yPos(0) + 4} textAnchor="end" className="text-[10px]" fill="#9ca3af">
+      <text x={PAD.left - 6} y={yPos(0) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
         {midline ? "0" : "0"}
       </text>
 
       {!midline && (
-        <text x={PAD.left - 6} y={yPos(maxVal) + 4} textAnchor="end" className="text-[10px]" fill="#9ca3af">
+        <text x={PAD.left - 6} y={yPos(maxVal) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
           {maxVal}
         </text>
       )}
@@ -87,7 +87,7 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
       <polyline
         points={values.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ")}
         fill="none"
-        stroke="#5c7a5c"
+        stroke="#71717a"
         strokeWidth={2}
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -115,15 +115,15 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
 
 function GraphCard({ data, title, subtitle, midline }: { data: Record<string, number>; title: string; subtitle: string; midline?: boolean }) {
   return (
-    <div className="animate-fade-in rounded-2xl border border-sage-200 bg-white p-5 shadow-md">
-      <div className="mb-1 text-sm font-bold text-sage-700">{title}</div>
-      <div className="mb-2 text-xs text-sage-400">{subtitle}</div>
+    <div className="animate-fade-in rounded-lg border border-border bg-card p-5 shadow-sm">
+      <div className="mb-1 text-sm font-semibold text-foreground">{title}</div>
+      <div className="mb-2 text-xs text-muted-foreground">{subtitle}</div>
       <LineGraph data={data} midline={midline} />
       <div className="mt-3 flex justify-center gap-4">
         {ORDER.map((k) => (
           <div key={k} className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[k] }} />
-            <span className="text-[10px] font-medium text-sage-500">{k}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">{k}</span>
           </div>
         ))}
       </div>
@@ -172,8 +172,8 @@ export default function ResultPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-sage-500 border-t-transparent" />
-          <p className="text-sm text-sage-400">Memuat hasil...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Memuat hasil...</p>
         </div>
       </div>
     )
@@ -182,11 +182,11 @@ export default function ResultPage() {
   if (error || !data) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white/80 p-8 text-center shadow-lg backdrop-blur">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl">⚠</div>
-          <p className="text-lg font-medium text-red-600">{error || "Hasil tidak ditemukan"}</p>
-          <p className="mt-1 text-sm text-sage-400">Periksa kembali UUID Anda</p>
-          <a href="/" className="mt-4 inline-block font-medium text-sage-600 underline underline-offset-2 hover:text-sage-800">Kembali ke Beranda</a>
+        <div className="w-full max-w-md rounded-lg border border-red-200 bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl">!</div>
+          <p className="text-lg font-medium text-destructive">{error || "Hasil tidak ditemukan"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Periksa kembali UUID Anda</p>
+          <Link href="/" className="mt-4 inline-block text-sm font-medium text-primary underline underline-offset-4 hover:text-zinc-700">Kembali ke Beranda</Link>
         </div>
       </div>
     )
@@ -195,20 +195,20 @@ export default function ResultPage() {
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-8">
       <div className="animate-slide-up">
-        <div className="overflow-hidden rounded-3xl border border-sage-200 bg-white shadow-xl">
-          <div className="bg-gradient-to-r from-sage-600 to-sage-700 p-8 text-center text-white">
-            <div className="mx-auto mb-2 inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur">
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="bg-zinc-900 p-8 text-center text-white">
+            <div className="mx-auto mb-2 inline-block rounded-md bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider">
               Hasil Tes DISC
             </div>
             <h1 className="text-2xl font-bold">{data.profile.profile}</h1>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-white/80">{data.profile.description}</p>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-400">{data.profile.description}</p>
           </div>
 
           <div className="p-6">
             <div className="mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-sage-400">ID Hasil</span>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">ID Hasil</span>
             </div>
-            <div className="mb-6 rounded-lg bg-sage-50 px-4 py-2 font-mono text-xs text-sage-500">
+            <div className="mb-6 rounded-md bg-muted/50 px-4 py-2 font-mono text-xs text-muted-foreground">
               {data.testId}
             </div>
 
@@ -218,14 +218,14 @@ export default function ResultPage() {
               <GraphCard data={data.calculatedScores.graph3Difference} title="Graph 3: Difference" subtitle="Perilaku Kombinasi (Mirror)" midline />
             </div>
 
-            <div className="mb-6 overflow-hidden rounded-2xl border border-sage-200 shadow-sm">
-              <div className="bg-gradient-to-r from-sage-50 to-sage-100/50 px-5 py-3">
-                <h2 className="text-sm font-bold text-sage-700">Rekapitulasi Skor</h2>
+            <div className="mb-6 overflow-hidden rounded-lg border border-border shadow-sm">
+              <div className="bg-muted/50 px-5 py-3">
+                <h2 className="text-sm font-semibold text-foreground">Rekapitulasi Skor</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-sage-50/50 text-left text-xs font-semibold uppercase tracking-wider text-sage-500">
+                    <tr className="border-b bg-muted/30 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       <th className="px-5 py-3">Kategori</th>
                       <th className="px-5 py-3">Most</th>
                       <th className="px-5 py-3">Least</th>
@@ -236,16 +236,16 @@ export default function ResultPage() {
                     {ORDER.map((k, i) => {
                       const diff = data.calculatedScores.graph3Difference[k]
                       return (
-                        <tr key={k} className={`border-b last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-sage-50/30"}`}>
+                        <tr key={k} className={`border-b last:border-0 ${i % 2 === 0 ? "bg-card" : "bg-muted/20"}`}>
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-2">
                               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[k] }} />
                               <span className="font-medium" style={{ color: COLORS[k] }}>{k}</span>
-                              <span className="text-sage-500">{LABELS[k]}</span>
+                              <span className="text-muted-foreground">{LABELS[k]}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-3 font-medium">{data.rawScores.most[k]}</td>
-                          <td className="px-5 py-3 font-medium">{data.rawScores.least[k]}</td>
+                          <td className="px-5 py-3 font-medium text-foreground">{data.rawScores.most[k]}</td>
+                          <td className="px-5 py-3 font-medium text-foreground">{data.rawScores.least[k]}</td>
                           <td className={`px-5 py-3 font-bold ${diff >= 0 ? "text-green-600" : "text-red-600"}`}>{diff >= 0 ? "+" : ""}{diff}</td>
                         </tr>
                       )
@@ -256,17 +256,17 @@ export default function ResultPage() {
             </div>
 
             {data.jobs.length > 0 && (
-              <div className="overflow-hidden rounded-2xl border border-sage-200 shadow-sm">
-                <div className="bg-gradient-to-r from-sage-50 to-sage-100/50 px-5 py-3">
-                  <h2 className="text-sm font-bold text-sage-700">Rekomendasi Karir</h2>
+              <div className="overflow-hidden rounded-lg border border-border shadow-sm">
+                <div className="bg-muted/50 px-5 py-3">
+                  <h2 className="text-sm font-semibold text-foreground">Rekomendasi Karir</h2>
                 </div>
                 <div className="p-5">
                   {data.jobs.map((cat, i) => (
                     <div key={i} className="mb-4 last:mb-0">
-                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-sage-500">{cat.title}</h3>
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{cat.title}</h3>
                       <div className="flex flex-wrap gap-2">
                         {cat.jobs.map((job, j) => (
-                          <span key={j} className="rounded-full border border-sage-200 bg-gradient-to-r from-sage-50 to-sage-100/50 px-3.5 py-1.5 text-xs font-medium text-sage-700 shadow-sm">
+                          <span key={j} className="rounded-md border border-border bg-muted/50 px-3.5 py-1.5 text-xs font-medium text-foreground">
                             {job}
                           </span>
                         ))}
@@ -278,9 +278,9 @@ export default function ResultPage() {
             )}
 
             <div className="mt-6 text-center">
-              <a href="/" className="inline-flex items-center gap-1 text-sm font-medium text-sage-600 underline underline-offset-2 hover:text-sage-800">
-                ← Kembali ke Beranda
-              </a>
+              <Link href="/" className="inline-flex items-center gap-1 text-sm font-medium text-primary underline underline-offset-4 hover:text-zinc-700">
+                &larr; Kembali ke Beranda
+              </Link>
             </div>
           </div>
         </div>

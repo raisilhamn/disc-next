@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sage-50: #f0f5f0;
-  --color-sage-100: #dde8dd;
-  --color-sage-200: #bfd2bf;
-  --color-sage-300: #9bb89b;
-  --color-sage-400: #7da07d;
-  --color-sage-500: #5c7a5c;
-  --color-sage-600: #4a634a;
-  --color-sage-700: #3c513c;
-  --color-sage-800: #2f3e2f;
-  --color-sage-900: #1f2a1f;
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0a0a;
+  --color-primary: #18181b;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+  --color-ring: #3b82f6;
 
-  --color-disc-d: #3b6ea5;
-  --color-disc-i: #b15555;
-  --color-disc-s: #5d8a5d;
-  --color-disc-c: #7b5ea7;
+  --color-disc-d: #3b82f6;
+  --color-disc-i: #ef4444;
+  --color-disc-s: #22c55e;
+  --color-disc-c: #a855f7;
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #f0f5f0;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 @keyframes fadeIn {
@@ -41,9 +51,9 @@ body {
 
 input[type="radio"] {
   appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #d1d5db;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
   border-radius: 50%;
   transition: all 0.15s ease;
   cursor: pointer;
@@ -53,13 +63,13 @@ input[type="radio"]:checked {
   border-width: 5px;
 }
 input[type="radio"][data-p]:checked {
-  border-color: #3b6ea5;
-  background-color: #3b6ea5;
+  border-color: var(--color-disc-d);
+  background-color: var(--color-disc-d);
 }
 input[type="radio"][data-k]:checked {
-  border-color: #b15555;
-  background-color: #b15555;
+  border-color: var(--color-disc-i);
+  background-color: var(--color-disc-i);
 }
 input[type="radio"]:hover:not(:checked) {
-  border-color: #9ca3af;
+  border-color: #a1a1aa;
 }
