@@ -47,7 +47,7 @@ export default function Home() {
               <strong className="text-foreground">Compliance (C)</strong> Anda.
             </p>
 
-            <div className="mb-6 rounded-lg border-l-4 border-ring bg-muted/50 p-4">
+            <div className="mb-6 rounded-lg border border-border bg-muted/50 p-4">
               <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-foreground">Petunjuk</h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2">
