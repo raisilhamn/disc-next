@@ -136,6 +136,15 @@ export default function ResultPage() {
   const [data, setData] = useState<ResultData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [copied, setCopied] = useState(false)
+
+  function copyLink() {
+    const url = `${window.location.origin}/result/${uuid}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   useEffect(() => {
     fetch(`/api/result/${uuid}`)
@@ -205,11 +214,19 @@ export default function ResultPage() {
           </div>
 
           <div className="p-6">
-            <div className="mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">ID Hasil</span>
-            </div>
-            <div className="mb-6 rounded-md bg-muted/50 px-4 py-2 font-mono text-xs text-muted-foreground">
-              {data.testId}
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">ID Hasil</div>
+                <div className="truncate rounded-md bg-muted/50 px-4 py-2 font-mono text-xs text-muted-foreground">
+                  {data.testId}
+                </div>
+              </div>
+              <button
+                onClick={copyLink}
+                className="shrink-0 rounded-md border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
+              >
+                {copied ? "Tersalin!" : "Copy Link"}
+              </button>
             </div>
 
             <div className="mb-6 grid gap-5 md:grid-cols-3">
