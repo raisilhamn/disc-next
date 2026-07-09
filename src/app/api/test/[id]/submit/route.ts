@@ -161,6 +161,8 @@ export async function POST(
           diffC: calculatedScores.graph3Difference.C,
           profile: profile.profile,
           description: profile.description,
+          primary: profile.primary,
+          secondary: profile.secondary,
         },
       }),
     ])

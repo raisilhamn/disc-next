@@ -18,6 +18,7 @@ let ratelimit: {
   create: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
   submit: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
   lookup: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
+  login: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
 } | null = null
 
 async function getRatelimit() {
@@ -54,6 +55,12 @@ async function getRatelimit() {
     prefix: "rl:lookup",
   })
 
+  const login = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "60 s"),
+    prefix: "rl:login",
+  })
+
   const toRetryAfterSeconds = (resetMs: number) =>
     Math.max(1, Math.ceil((resetMs - Date.now()) / 1000))
 
@@ -64,6 +71,8 @@ async function getRatelimit() {
       submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
     lookup: async (ip: string) =>
       lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
+    login: async (ip: string) =>
+      login.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
   }
 
   return ratelimit
@@ -93,6 +102,16 @@ export async function checkLookupLimit(ip: string) {
   const rl = await getRatelimit()
   if (!rl) return { ok: true }
   return safeCheck(() => rl.lookup(ip))
+}
+
+export async function checkLoginLimit(ip: string) {
+  const rl = await getRatelimit()
+  if (!rl) return { ok: true }
+  return safeCheck(() => rl.login(ip))
+}
+
+export function isNonEmptyString(s: unknown, maxLen: number): s is string {
+  return typeof s === "string" && s.trim().length > 0 && s.trim().length <= maxLen
 }
 
 export function sanitizeJsonBody(body: unknown, maxBytes: number): boolean {

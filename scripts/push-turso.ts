@@ -38,6 +38,7 @@ async function push() {
   CREATE TABLE IF NOT EXISTS "Result" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "testId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "mD" INTEGER NOT NULL,
     "mI" INTEGER NOT NULL,
     "mS" INTEGER NOT NULL,
@@ -54,15 +55,55 @@ async function push() {
     "description" TEXT NOT NULL,
     FOREIGN KEY ("testId") REFERENCES "Test" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
   );
+  CREATE TABLE IF NOT EXISTS "User" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'HR',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS "TestBatch" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "label" TEXT NOT NULL,
+    "hrUserId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("hrUserId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+  );
   CREATE UNIQUE INDEX IF NOT EXISTS "Question_number_key" ON "Question"("number");
   CREATE UNIQUE INDEX IF NOT EXISTS "Answer_testId_questionNumber_key" ON "Answer"("testId", "questionNumber");
-  CREATE UNIQUE INDEX IF NOT EXISTS "Result_testId_key" ON "Result"("testId");`
+  CREATE UNIQUE INDEX IF NOT EXISTS "Result_testId_key" ON "Result"("testId");
+  CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");`
 
   const stmts = sql.split(";").map((s) => s.trim()).filter(Boolean)
   for (const stmt of stmts) {
     await db.execute(stmt + ";")
     console.log(`OK: ${stmt.slice(0, 60)}...`)
   }
+
+  // Columns added after the initial schema: SQLite has no "ADD COLUMN IF NOT EXISTS",
+  // so these are applied individually and a "duplicate column" failure (already applied) is ignored.
+  const alterStmts = [
+    `ALTER TABLE "Test" ADD COLUMN "batchId" TEXT REFERENCES "TestBatch" ("id") ON DELETE SET NULL ON UPDATE CASCADE`,
+    `ALTER TABLE "Test" ADD COLUMN "respondentName" TEXT`,
+    `ALTER TABLE "Result" ADD COLUMN "primary" TEXT`,
+    `ALTER TABLE "Result" ADD COLUMN "secondary" TEXT`,
+    `ALTER TABLE "Result" ADD COLUMN "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`,
+  ]
+  for (const stmt of alterStmts) {
+    try {
+      await db.execute(stmt)
+      console.log(`OK: ${stmt.slice(0, 60)}...`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (msg.includes("duplicate column name")) {
+        console.log(`SKIP (already applied): ${stmt.slice(0, 60)}...`)
+      } else {
+        throw e
+      }
+    }
+  }
+
   console.log("\nSchema pushed!")
 }
 

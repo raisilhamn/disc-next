@@ -6,11 +6,41 @@ datasource db {
   provider = "sqlite"
 }
 
+enum Role {
+  HR
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(HR)
+  createdAt    DateTime @default(now())
+
+  batches TestBatch[]
+}
+
+model TestBatch {
+  id        String   @id @default(uuid())
+  label     String
+  hrUserId  String
+  createdAt DateTime @default(now())
+
+  hrUser User   @relation(fields: [hrUserId], references: [id])
+  tests  Test[]
+}
+
 model Test {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  batchId        String?
+  respondentName String?
+
+  batch    TestBatch? @relation(fields: [batchId], references: [id])
   answers  Answer[]
   result   Result?
 }
@@ -50,8 +80,9 @@ model Answer {
 }
 
 model Result {
-  id     String @id @default(uuid())
-  testId String @unique
+  id        String   @id @default(uuid())
+  testId    String   @unique
+  createdAt DateTime @default(now())
 
   mD Int
   mI Int
@@ -69,6 +100,8 @@ model Result {
 
   profile     String
   description String
+  primary     String?
+  secondary   String?
 
   test Test @relation(fields: [testId], references: [id])
 }
