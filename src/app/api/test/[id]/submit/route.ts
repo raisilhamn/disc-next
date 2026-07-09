@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { calculateScores, determineProfile } from "@/lib/scoring"
 import { NextResponse } from "next/server"
 import {
@@ -7,6 +8,7 @@ import {
   isValidOptionId,
   checkSubmitLimit,
   sanitizeJsonBody,
+  getClientIp,
 } from "@/lib/security"
 import { getRedis } from "@/lib/redis"
 
@@ -14,7 +16,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const ip = getClientIp(request)
   const rl = await checkSubmitLimit(ip)
   if (!rl.ok) {
     return NextResponse.json(
@@ -124,15 +126,6 @@ export async function POST(
     }
   }
 
-  await prisma.answer.createMany({
-    data: typedAnswers.map((a) => ({
-      testId: id,
-      questionNumber: a.questionNumber,
-      optionIdM: a.optionIdM,
-      optionIdL: a.optionIdL,
-    })),
-  })
-
   const answerKeys = typedAnswers.map((a) => ({
     keyM: optionMap.get(a.optionIdM)!.keyM,
     keyL: optionMap.get(a.optionIdL)!.keyL,
@@ -141,25 +134,42 @@ export async function POST(
   const { rawScores, calculatedScores } = calculateScores(answerKeys)
   const profile = determineProfile(calculatedScores.graph3Difference)
 
-  await prisma.result.create({
-    data: {
-      testId: id,
-      mD: rawScores.most.D,
-      mI: rawScores.most.I,
-      mS: rawScores.most.S,
-      mC: rawScores.most.C,
-      lD: rawScores.least.D,
-      lI: rawScores.least.I,
-      lS: rawScores.least.S,
-      lC: rawScores.least.C,
-      diffD: calculatedScores.graph3Difference.D,
-      diffI: calculatedScores.graph3Difference.I,
-      diffS: calculatedScores.graph3Difference.S,
-      diffC: calculatedScores.graph3Difference.C,
-      profile: profile.profile,
-      description: profile.description,
-    },
-  })
+  try {
+    await prisma.$transaction([
+      prisma.answer.createMany({
+        data: typedAnswers.map((a) => ({
+          testId: id,
+          questionNumber: a.questionNumber,
+          optionIdM: a.optionIdM,
+          optionIdL: a.optionIdL,
+        })),
+      }),
+      prisma.result.create({
+        data: {
+          testId: id,
+          mD: rawScores.most.D,
+          mI: rawScores.most.I,
+          mS: rawScores.most.S,
+          mC: rawScores.most.C,
+          lD: rawScores.least.D,
+          lI: rawScores.least.I,
+          lS: rawScores.least.S,
+          lC: rawScores.least.C,
+          diffD: calculatedScores.graph3Difference.D,
+          diffI: calculatedScores.graph3Difference.I,
+          diffS: calculatedScores.graph3Difference.S,
+          diffC: calculatedScores.graph3Difference.C,
+          profile: profile.profile,
+          description: profile.description,
+        },
+      }),
+    ])
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "Test already submitted" }, { status: 400 })
+    }
+    throw e
+  }
 
   const redis = getRedis()
   if (redis) {

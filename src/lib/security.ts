@@ -5,6 +5,15 @@ export function isValidUUID(s: string): boolean {
   return UUID_RE.test(s)
 }
 
+export function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for")
+  if (forwardedFor) {
+    const first = forwardedFor.split(",")[0]?.trim()
+    if (first) return first
+  }
+  return request.headers.get("x-real-ip") || "unknown"
+}
+
 let ratelimit: {
   create: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
   submit: (ip: string) => Promise<{ ok: boolean; retryAfter?: number }>
@@ -45,13 +54,16 @@ async function getRatelimit() {
     prefix: "rl:lookup",
   })
 
+  const toRetryAfterSeconds = (resetMs: number) =>
+    Math.max(1, Math.ceil((resetMs - Date.now()) / 1000))
+
   ratelimit = {
     create: async (ip: string) =>
-      create.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+      create.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
     submit: async (ip: string) =>
-      submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+      submit.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
     lookup: async (ip: string) =>
-      lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: r.reset })),
+      lookup.limit(ip).then((r) => ({ ok: r.success, retryAfter: toRetryAfterSeconds(r.reset) })),
   }
 
   return ratelimit
@@ -88,7 +100,7 @@ export function sanitizeJsonBody(body: unknown, maxBytes: number): boolean {
     return false
   }
   const raw = JSON.stringify(body)
-  if (raw.length > maxBytes) return false
+  if (Buffer.byteLength(raw, "utf8") > maxBytes) return false
   return true
 }
 

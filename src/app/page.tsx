@@ -6,6 +6,7 @@ import { useEffect, useSyncExternalStore, useState } from "react"
 export default function Home() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [uuid, setUuid] = useState("")
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
   const [totalTests, setTotalTests] = useState<number | null>(null)
@@ -15,9 +16,20 @@ export default function Home() {
 
   async function startTest() {
     setLoading(true)
-    const res = await fetch("/api/test", { method: "POST" })
-    const data = await res.json()
-    router.push(`/test/${data.id}`)
+    setError("")
+    try {
+      const res = await fetch("/api/test", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Gagal memulai tes")
+        setLoading(false)
+        return
+      }
+      router.push(`/test/${data.id}`)
+    } catch {
+      setError("Gagal terhubung ke server")
+      setLoading(false)
+    }
   }
 
   function lookupResult() {
@@ -72,6 +84,10 @@ export default function Home() {
             >
               {loading ? "Menyiapkan..." : "Mulai Tes"}
             </button>
+
+            {error && (
+              <p className="mt-2 text-center text-xs font-medium text-destructive">{error}</p>
+            )}
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">

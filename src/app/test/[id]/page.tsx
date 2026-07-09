@@ -51,6 +51,7 @@ export default function TestPage() {
         d.questions.forEach((q: Question) => { initial[q.number] = { most: null, least: null } })
         setAnswers(initial)
       })
+      .catch(() => setError("Gagal memuat soal"))
   }, [id])
 
   useEffect(() => {
@@ -96,17 +97,22 @@ export default function TestPage() {
       optionIdM: ans.most!,
       optionIdL: ans.least!,
     }))
-    const res = await fetch(`/api/test/${id}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers: payload }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      clearStorage(id)
-      router.push(`/result/${id}`)
-    } else {
-      setError(data.error || "Terjadi kesalahan")
+    try {
+      const res = await fetch(`/api/test/${id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers: payload }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        clearStorage(id)
+        router.push(`/result/${id}`)
+      } else {
+        setError(data.error || "Terjadi kesalahan")
+        setSubmitting(false)
+      }
+    } catch {
+      setError("Gagal terhubung ke server")
       setSubmitting(false)
     }
   }

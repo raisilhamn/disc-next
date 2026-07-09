@@ -43,7 +43,6 @@ export function determineProfile(diff: Record<string, number>): {
 } {
   const sorted = Object.entries(diff).sort((a, b) => b[1] - a[1])
   const top = sorted[0]
-  const second = sorted[1]
   const aboveMidline = sorted.filter(([, v]) => v > 0)
 
   const profileMap: Record<string, { name: string; desc: string }> = {

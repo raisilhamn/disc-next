@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-import { checkCreateLimit } from "@/lib/security"
+import { checkCreateLimit, getClientIp } from "@/lib/security"
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const ip = getClientIp(request)
   const rl = await checkCreateLimit(ip)
   if (!rl.ok) {
     return NextResponse.json(
