@@ -83,12 +83,14 @@ async function push() {
 
   // Columns added after the initial schema: SQLite has no "ADD COLUMN IF NOT EXISTS",
   // so these are applied individually and a "duplicate column" failure (already applied) is ignored.
+  // Turso's remote engine (unlike local SQLite) also rejects ADD COLUMN with a non-constant
+  // default (e.g. CURRENT_TIMESTAMP), so createdAt is added nullable and backfilled separately.
   const alterStmts = [
     `ALTER TABLE "Test" ADD COLUMN "batchId" TEXT REFERENCES "TestBatch" ("id") ON DELETE SET NULL ON UPDATE CASCADE`,
     `ALTER TABLE "Test" ADD COLUMN "respondentName" TEXT`,
     `ALTER TABLE "Result" ADD COLUMN "primary" TEXT`,
     `ALTER TABLE "Result" ADD COLUMN "secondary" TEXT`,
-    `ALTER TABLE "Result" ADD COLUMN "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`,
+    `ALTER TABLE "Result" ADD COLUMN "createdAt" DATETIME`,
   ]
   for (const stmt of alterStmts) {
     try {
@@ -103,6 +105,10 @@ async function push() {
       }
     }
   }
+
+  const backfill = `UPDATE "Result" SET "createdAt" = CURRENT_TIMESTAMP WHERE "createdAt" IS NULL`
+  const result = await db.execute(backfill)
+  console.log(`OK: backfilled createdAt on ${result.rowsAffected} row(s)`)
 
   console.log("\nSchema pushed!")
 }
