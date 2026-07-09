@@ -8,6 +8,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://disc.raisilham.com"),
   title: "DISC Personality Test",
   description: "Tes DISC 24 Soal - Personality Assessment",
   icons: { icon: "/favicon.svg" },
