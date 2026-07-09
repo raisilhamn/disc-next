@@ -91,6 +91,7 @@ export default function TestPage() {
   }
 
   async function submit() {
+    if (!canNext) return
     setSubmitting(true)
     const payload = Object.entries(answers).map(([num, ans]) => ({
       questionNumber: Number(num),
@@ -244,7 +245,7 @@ export default function TestPage() {
           ) : (
             <button
               onClick={submit}
-              disabled={submitting}
+              disabled={submitting || !canNext}
               className="rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-30"
             >
               {submitting ? "Mengirim..." : "Lihat Hasil Tes"}
