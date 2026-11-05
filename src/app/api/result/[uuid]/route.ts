@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { isValidUUID, checkLookupLimit, getClientIp } from "@/lib/security"
+import { analyzeProfile } from "@/lib/scoring"
 
 export async function GET(
   request: Request,
@@ -34,22 +35,20 @@ export async function GET(
     return NextResponse.json({ error: "Test not completed yet" }, { status: 400 })
   }
 
+  const r = test.result
+  const most = { D: r.mD, I: r.mI, S: r.mS, C: r.mC }
+  const least = { D: r.lD, I: r.lI, S: r.lS, C: r.lC }
+
   return NextResponse.json({
     testId: test.id,
     createdAt: test.createdAt,
     status: "COMPLETED",
-    rawScores: {
-      most: { D: test.result.mD, I: test.result.mI, S: test.result.mS, C: test.result.mC },
-      least: { D: test.result.lD, I: test.result.lI, S: test.result.lS, C: test.result.lC },
-    },
+    rawScores: { most, least },
     calculatedScores: {
-      graph1Most: { D: test.result.mD, I: test.result.mI, S: test.result.mS, C: test.result.mC },
-      graph2Least: { D: test.result.lD, I: test.result.lI, S: test.result.lS, C: test.result.lC },
-      graph3Difference: { D: test.result.diffD, I: test.result.diffI, S: test.result.diffS, C: test.result.diffC },
+      graph1Most: most,
+      graph2Least: least,
+      graph3Difference: { D: r.diffD, I: r.diffI, S: r.diffS, C: r.diffC },
     },
-    profile: {
-      profile: test.result.profile,
-      description: test.result.description,
-    },
+    profile: analyzeProfile(most, least),
   })
 }

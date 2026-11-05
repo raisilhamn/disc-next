@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { calculateScores, determineProfile } from "@/lib/scoring"
+import { calculateScores, analyzeProfile } from "@/lib/scoring"
 import { NextResponse } from "next/server"
 import {
   isValidUUID,
@@ -132,7 +132,7 @@ export async function POST(
   }))
 
   const { rawScores, calculatedScores } = calculateScores(answerKeys)
-  const profile = determineProfile(calculatedScores.graph3Difference)
+  const profile = analyzeProfile(rawScores.most, rawScores.least)
 
   try {
     await prisma.$transaction([
@@ -159,8 +159,8 @@ export async function POST(
           diffI: calculatedScores.graph3Difference.I,
           diffS: calculatedScores.graph3Difference.S,
           diffC: calculatedScores.graph3Difference.C,
-          profile: profile.profile,
-          description: profile.description,
+          profile: profile.change.pattern.name,
+          description: profile.change.pattern.description,
           primary: profile.primary,
           secondary: profile.secondary,
         },

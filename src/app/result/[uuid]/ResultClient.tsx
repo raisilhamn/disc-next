@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { COLORS, LABELS, ORDER } from "@/lib/disc"
+import type { DiscProfile, ProfileLine } from "@/lib/scoring"
 
 type ResultData = {
   testId: string
@@ -14,32 +15,21 @@ type ResultData = {
     graph2Least: Record<string, number>
     graph3Difference: Record<string, number>
   }
-  profile: { profile: string; description: string }
-  jobs: { title: string; jobs: string[] }[]
+  profile: DiscProfile
 }
 
-function LineGraph({ data, midline = false }: { data: Record<string, number>; midline?: boolean }) {
+// Graph values are on the fixed -8..+8 scale of the conversion tables.
+const SCALE = 8
+
+function LineGraph({ data }: { data: Record<string, number> }) {
   const W = 280
   const H = 180
   const PAD = { top: 20, right: 16, bottom: 28, left: 30 }
 
   const values = ORDER.map((k) => data[k] ?? 0)
-  const allPositive = values.every((v) => v >= 0)
-  const maxVal = Math.max(...values.map(Math.abs), 4)
-
-  let yBase: number
-  let yScale: number
-  let plotH: number
-
-  if (midline || !allPositive) {
-    plotH = H - PAD.top - PAD.bottom
-    yBase = PAD.top + plotH / 2
-    yScale = (plotH / 2) / maxVal
-  } else {
-    plotH = H - PAD.top - PAD.bottom
-    yBase = PAD.top + plotH
-    yScale = plotH / maxVal
-  }
+  const plotH = H - PAD.top - PAD.bottom
+  const yBase = PAD.top + plotH / 2
+  const yScale = (plotH / 2) / SCALE
 
   const plotW = W - PAD.left - PAD.right
 
@@ -51,8 +41,6 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
     return yBase - v * yScale
   }
 
-  const hasNegative = values.some((v) => v < 0)
-
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 200 }}>
       <line
@@ -60,26 +48,16 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
         y1={yPos(0)}
         x2={W - PAD.right}
         y2={yPos(0)}
-        stroke={midline ? "#d4d4d8" : "#e4e4e7"}
-        strokeWidth={midline ? 1.5 : 1}
-        strokeDasharray={midline ? "4,3" : "none"}
+        stroke="#d4d4d8"
+        strokeWidth={1.5}
+        strokeDasharray="4,3"
       />
 
-      {midline && hasNegative && [-maxVal, maxVal].map((v) => (
+      {[-SCALE, 0, SCALE].map((v) => (
         <text key={v} x={PAD.left - 6} y={yPos(v) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
           {v > 0 ? `+${v}` : v}
         </text>
       ))}
-
-      <text x={PAD.left - 6} y={yPos(0) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
-        {midline ? "0" : "0"}
-      </text>
-
-      {!midline && (
-        <text x={PAD.left - 6} y={yPos(maxVal) + 4} textAnchor="end" className="text-[10px]" fill="#a1a1aa">
-          {maxVal}
-        </text>
-      )}
 
       <polyline
         points={values.map((v, i) => `${xPos(i)},${yPos(v)}`).join(" ")}
@@ -110,12 +88,12 @@ function LineGraph({ data, midline = false }: { data: Record<string, number>; mi
   )
 }
 
-function GraphCard({ data, title, subtitle, midline }: { data: Record<string, number>; title: string; subtitle: string; midline?: boolean }) {
+function GraphCard({ line, title, subtitle }: { line: ProfileLine; title: string; subtitle: string }) {
   return (
     <div className="animate-fade-in rounded-lg border border-border bg-card p-5 shadow-sm">
       <div className="mb-1 text-sm font-semibold text-foreground">{title}</div>
       <div className="mb-2 text-xs text-muted-foreground">{subtitle}</div>
-      <LineGraph data={data} midline={midline} />
+      <LineGraph data={line.graph} />
       <div className="mt-3 flex justify-center gap-4">
         {ORDER.map((k) => (
           <div key={k} className="flex items-center gap-1.5">
@@ -123,6 +101,16 @@ function GraphCard({ data, title, subtitle, midline }: { data: Record<string, nu
             <span className="text-[10px] font-medium text-muted-foreground">{k}</span>
           </div>
         ))}
+      </div>
+      <div className="mt-4 border-t border-border pt-3">
+        <div className="text-xs font-bold uppercase tracking-wide text-foreground">{line.pattern.name}</div>
+        {line.pattern.behaviour.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {line.pattern.behaviour.map((b) => (
+              <span key={b} className="rounded-md bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">{b}</span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -168,31 +156,11 @@ export default function ResultClient() {
       .then((r) => r.json())
       .then((d) => {
         if (d.error) { setError(d.error); return }
-        setData({ ...d, jobs: [] })
+        setData(d)
       })
       .catch(() => setError("Gagal memuat hasil"))
       .finally(() => setLoading(false))
   }, [uuid])
-
-  useEffect(() => {
-    async function loadJobs() {
-      const { getJobRecommendations } = await import("@/lib/jobs")
-      if (!data) return
-      const profile = data.profile.profile
-      let primary = ""
-      let secondary: string | undefined
-      if (profile.startsWith("PURE ")) primary = profile.charAt(5)
-      else {
-        const m = profile.match(/^Kombinasi\s+(\w)(\w)/)
-        if (m) { primary = m[1]; secondary = m[2] }
-      }
-      if (primary) {
-        const jobs = getJobRecommendations(primary, secondary)
-        setData((prev) => (prev ? { ...prev, jobs } : prev))
-      }
-    }
-    if (data) loadJobs()
-  }, [data])
 
   if (loading) {
     return (
@@ -218,6 +186,8 @@ export default function ResultClient() {
     )
   }
 
+  const change = data.profile.change
+
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-4 py-8">
       <div className="animate-slide-up">
@@ -227,15 +197,15 @@ export default function ResultClient() {
               <div className="mx-auto mb-2 inline-block rounded-md bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider">
                 Hasil Tes DISC
               </div>
-              <h1 className="text-2xl font-bold">{data.profile.profile}</h1>
-              <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-400">{data.profile.description}</p>
+              <h1 className="text-2xl font-bold">{change.pattern.name}</h1>
+              <p className="mx-auto mt-3 max-w-lg text-sm text-zinc-400">{change.pattern.description}</p>
             </div>
 
             <div className="p-6 pb-0">
               <div className="grid gap-5 md:grid-cols-3">
-                <GraphCard data={data.calculatedScores.graph1Most} title="Graph 1: Most" subtitle="Perilaku Publik (Mask)" />
-                <GraphCard data={data.calculatedScores.graph2Least} title="Graph 2: Least" subtitle="Perilaku Asli (Core)" />
-                <GraphCard data={data.calculatedScores.graph3Difference} title="Graph 3: Difference" subtitle="Perilaku Kombinasi (Mirror)" midline />
+                <GraphCard line={data.profile.most} title="Graph 1: Most" subtitle="Kepribadian di muka umum (Mask)" />
+                <GraphCard line={data.profile.least} title="Graph 2: Least" subtitle="Kepribadian saat mendapat tekanan (Core)" />
+                <GraphCard line={change} title="Graph 3: Change" subtitle="Kepribadian asli yang tersembunyi (Mirror)" />
               </div>
             </div>
           </div>
@@ -302,23 +272,16 @@ export default function ResultClient() {
               </div>
             </div>
 
-            {data.jobs.length > 0 && (
+            {change.pattern.jobs.length > 0 && (
               <div className="overflow-hidden rounded-lg border border-border shadow-sm">
                 <div className="bg-muted/50 px-5 py-3">
-                  <h2 className="text-sm font-semibold text-foreground">Rekomendasi Karir</h2>
+                  <h2 className="text-sm font-semibold text-foreground">Kesesuaian Profesi</h2>
                 </div>
-                <div className="p-5">
-                  {data.jobs.map((cat, i) => (
-                    <div key={i} className="mb-4 last:mb-0">
-                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{cat.title}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {cat.jobs.map((job, j) => (
-                          <span key={j} className="rounded-md border border-border bg-muted/50 px-3.5 py-1.5 text-xs font-medium text-foreground">
-                            {job}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                <div className="flex flex-wrap gap-2 p-5">
+                  {change.pattern.jobs.map((job) => (
+                    <span key={job} className="rounded-md border border-border bg-muted/50 px-3.5 py-1.5 text-xs font-medium text-foreground">
+                      {job}
+                    </span>
                   ))}
                 </div>
               </div>
