@@ -105,11 +105,11 @@ function GraphCard({ line, title, subtitle }: { line: ProfileLine; title: string
       <div className="mt-4 border-t border-border pt-3">
         <div className="text-xs font-bold uppercase tracking-wide text-foreground">{line.pattern.name}</div>
         {line.pattern.behaviour.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
             {line.pattern.behaviour.map((b) => (
-              <span key={b} className="rounded-md bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">{b}</span>
+              <li key={b}>{b}</li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>
@@ -277,13 +277,11 @@ export default function ResultClient() {
                 <div className="bg-muted/50 px-5 py-3">
                   <h2 className="text-sm font-semibold text-foreground">Kesesuaian Profesi</h2>
                 </div>
-                <div className="flex flex-wrap gap-2 p-5">
+                <ul className="list-disc space-y-1.5 py-5 pl-10 pr-5 text-sm text-foreground marker:text-muted-foreground">
                   {change.pattern.jobs.map((job) => (
-                    <span key={job} className="rounded-md border border-border bg-muted/50 px-3.5 py-1.5 text-xs font-medium text-foreground">
-                      {job}
-                    </span>
+                    <li key={job}>{job}</li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
 
